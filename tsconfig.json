@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "The root's own files, which the toolchain reads rather than a browser. Each package extends an environment config directly; there is no repository-wide base, because the source condition that would live in one ships with the settings.",
+  "extends": "@stealthscale/vite-config-typescript/node.json",
+  "include": ["vite.config.ts"]
+}

@@ -1,0 +1,52 @@
+packages:
+  - apps/*
+  - components/*
+  - foundations/*
+  - packages/*
+
+catalogMode: prefer
+
+# `vite` is Vite+ under an alias: the toolchain ships under its own name and is installed here in
+# place of Vite, which is why this is an alias rather than a range.
+catalog:
+  "@stealthscale/vite-config": ^0.1.2
+  "@stealthscale/vite-config-core": ^0.2.0
+  "@stealthscale/vite-config-react": ^0.1.0
+  "@stealthscale/vite-config-typescript": ^0.1.1
+  "@stealthscale/vite-plugin-sbom": ^0.2.0
+  "@types/node": ^24
+  "@types/react": ^19.3.0
+  "@types/react-dom": ^19.3.0
+  "@vitejs/plugin-react": ^6.1.1
+  eslint-plugin-jsdoc: ^64.3.4
+  eslint-plugin-perfectionist: ^5.11.0
+  eslint-plugin-tsdoc: ^0.5.2
+  happy-dom: ^20.14.3
+  oxc-transform-react: ^0.149.0
+  react: ^19.3.0
+  react-dom: ^19.3.0
+  typescript: ^7.0.2
+  vite: npm:@voidzero-dev/vite-plus-core@0.3.1
+  vite-plus: 0.3.1
+
+overrides:
+  vite@*: "catalog:"
+
+# `vite` here is Vite+ under an alias, so its version reads as 0.3.1 and every package asking for a
+# real Vite range reports an unmet peer. The range they ask for is satisfied; the number they read
+# is not the one they are checking against.
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: "*"
+
+minimumReleaseAgeExclude:
+  - '@stealthscale/vite-config-core@0.2.0'
+  - '@stealthscale/vite-config-react@0.1.0'
+  - '@stealthscale/vite-config-typescript@0.1.1'
+  - '@stealthscale/vite-config@0.1.1 || 0.1.2'
+  - '@stealthscale/vite-plugin-base@0.1.1'
+  - '@stealthscale/vite-plugin-sbom@0.2.0'
+  - yaml@2.9.1
+

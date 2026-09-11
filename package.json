@@ -1,0 +1,41 @@
+{
+  "name": "@stealthscale/platform",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The stealth platform, built, checked, tested and released under the house configuration.",
+  "type": "module",
+  "scripts": {
+    "dev": "vp run website#dev",
+    "ready": "vp run ci"
+  },
+  "devDependencies": {
+    "@stealthscale/vite-config": "catalog:",
+    "@stealthscale/vite-config-core": "catalog:",
+    "@stealthscale/vite-config-react": "catalog:",
+    "@stealthscale/vite-config-typescript": "catalog:",
+    "@stealthscale/vite-plugin-sbom": "catalog:",
+    "@types/node": "catalog:",
+    "eslint-plugin-jsdoc": "catalog:",
+    "eslint-plugin-perfectionist": "catalog:",
+    "eslint-plugin-tsdoc": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^12.4.1",
+      "onFail": "download"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^24",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@12.4.1"
+}
