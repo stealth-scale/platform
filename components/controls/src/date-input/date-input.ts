@@ -1,0 +1,37 @@
+/**
+ * The date input, under this design system's own name.
+ */
+
+export {
+  DateInput,
+  DateInputContext,
+  DateInputControl,
+  type DateInputControlProps,
+  type DateInputDateValue,
+  type DateInputFocusChangeDetails,
+  DateInputHiddenInput,
+  type DateInputHiddenInputProps,
+  DateInputLabel,
+  type DateInputLabelProps,
+  DateInputPropsProvider,
+  DateInputRoot,
+  type DateInputRootBaseProps,
+  type DateInputRootProps,
+  DateInputRootProvider,
+  type DateInputRootProviderBaseProps,
+  type DateInputRootProviderProps,
+  DateInputSegment,
+  DateInputSegmentGroup,
+  type DateInputSegmentGroupProps,
+  type DateInputSegmentProps,
+  DateInputSegments,
+  type DateInputSegmentsProps,
+  type DateInputSelectionMode,
+  type DateInputValueChangeDetails,
+  useDateInput,
+  useDateInputContext,
+  type UseDateInputContext,
+  type UseDateInputProps,
+  type UseDateInputReturn,
+  useDateInputStyles,
+} from "@chakra-ui/react/date-input";

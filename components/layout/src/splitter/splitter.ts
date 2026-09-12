@@ -1,0 +1,37 @@
+/**
+ * The splitter, under this design system's own name.
+ */
+
+export {
+  createSplitterRegistry,
+  getSplitterLayout,
+  Splitter,
+  SplitterContext,
+  type SplitterExpandCollapseDetails,
+  SplitterPanel,
+  type SplitterPanelData,
+  type SplitterPanelProps,
+  SplitterPropsProvider,
+  type SplitterRegistryProps,
+  type SplitterRegistryReturn,
+  type SplitterResizeDetails,
+  type SplitterResizeEndDetails,
+  SplitterResizeTrigger,
+  SplitterResizeTriggerIndicator,
+  type SplitterResizeTriggerIndicatorProps,
+  type SplitterResizeTriggerProps,
+  SplitterResizeTriggerSeparator,
+  type SplitterResizeTriggerSeparatorProps,
+  SplitterRoot,
+  type SplitterRootBaseProps,
+  type SplitterRootProps,
+  SplitterRootProvider,
+  type SplitterRootProviderBaseProps,
+  type SplitterRootProviderProps,
+  useSplitter,
+  useSplitterContext,
+  type UseSplitterContext,
+  type UseSplitterProps,
+  type UseSplitterReturn,
+  useSplitterStyles,
+} from "@chakra-ui/react/splitter";

@@ -1,0 +1,35 @@
+/**
+ * The number input, under this design system's own name.
+ */
+
+export {
+  NumberInput,
+  NumberInputContext,
+  NumberInputControl,
+  type NumberInputControlProps,
+  NumberInputDecrementTrigger,
+  type NumberInputDecrementTriggerProps,
+  type NumberInputFocusChangeDetails,
+  NumberInputIncrementTrigger,
+  type NumberInputIncrementTriggerProps,
+  NumberInputInput,
+  type NumberInputInputProps,
+  NumberInputLabel,
+  type NumberInputLabelProps,
+  NumberInputPropsProvider,
+  NumberInputRoot,
+  type NumberInputRootProps,
+  NumberInputRootProvider,
+  type NumberInputRootProviderProps,
+  NumberInputScrubber,
+  type NumberInputScrubberProps,
+  type NumberInputValueChangeDetails,
+  type NumberInputValueInvalidDetails,
+  NumberInputValueText,
+  type NumberInputValueTextProps,
+  useNumberInput,
+  useNumberInputContext,
+  type UseNumberInputProps,
+  type UseNumberInputReturn,
+  useNumberInputStyles,
+} from "@chakra-ui/react/number-input";

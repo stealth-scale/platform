@@ -1,0 +1,54 @@
+{
+  "name": "@stealthscale/component-media",
+  "version": "0.0.0",
+  "description": "Draws pictures and sound, and the frames they sit in.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stealth-scale/ui.git",
+    "directory": "components/media"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#*": "./src/*"
+  },
+  "exports": {
+    ".": {
+      "stealth-source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.js",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts"
+  },
+  "devDependencies": {
+    "@ark-ui/react": "catalog:",
+    "@chakra-ui/react": "catalog:",
+    "@emotion/react": "catalog:",
+    "@stealthscale/foundation-specimen": "workspace:^",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
+    "@types/react": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:"
+  },
+  "peerDependencies": {
+    "@ark-ui/react": "catalog:",
+    "@chakra-ui/react": "catalog:",
+    "@emotion/react": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:"
+  }
+}
