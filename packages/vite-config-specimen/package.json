@@ -1,0 +1,47 @@
+{
+  "name": "@stealthscale/vite-config-specimen",
+  "version": "0.0.0",
+  "description": "What a repository showing a catalogue is configured by: the index plugin, and what a specimen file is checked as.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stealth-scale/platform.git",
+    "directory": "packages/vite-config-specimen"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#*": "./src/*"
+  },
+  "exports": {
+    ".": {
+      "stealth-source": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts"
+  },
+  "devDependencies": {
+    "@stealthscale/vite-config": "catalog:",
+    "@stealthscale/vite-config-core": "catalog:",
+    "@stealthscale/vite-plugin-specimen": "workspace:^",
+    "@types/node": "catalog:"
+  },
+  "peerDependencies": {
+    "@stealthscale/vite-config": "catalog:",
+    "@stealthscale/vite-config-core": "catalog:",
+    "@stealthscale/vite-plugin-specimen": "workspace:^"
+  }
+}
