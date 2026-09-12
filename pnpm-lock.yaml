@@ -201,14 +201,14 @@ catalogs:
       specifier: ^0.1.0
       version: 0.1.0
     '@stealthscale/vite-config':
-      specifier: ^0.1.4
-      version: 0.1.4
+      specifier: ^0.1.5
+      version: 0.1.5
     '@stealthscale/vite-config-core':
       specifier: ^0.2.0
       version: 0.2.0
     '@stealthscale/vite-config-react':
-      specifier: ^0.3.0
-      version: 0.3.0
+      specifier: ^0.4.0
+      version: 0.4.0
     '@stealthscale/vite-config-typescript':
       specifier: ^0.1.1
       version: 0.1.1
@@ -273,13 +273,13 @@ importers:
         version: 0.18.5
       '@stealthscale/vite-config':
         specifier: 'catalog:'
-        version: 0.1.4(8efb7c07e51fa7e630fd27df3527c08f)
+        version: 0.1.5(e8971e829804deddabd52764bb4ffcf2)
       '@stealthscale/vite-config-core':
         specifier: 'catalog:'
         version: 0.2.0(vite-plus@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))
       '@stealthscale/vite-config-react':
         specifier: 'catalog:'
-        version: 0.3.0(@stealthscale/vite-config@0.1.4(8efb7c07e51fa7e630fd27df3527c08f))(@vitejs/plugin-react@6.1.1(@voidzero-dev/vite-plus-core@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(esbuild@0.28.2)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))(oxc-transform-react@0.149.0))(oxc-transform-react@0.149.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite-plus@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))
+        version: 0.4.0(@stealthscale/vite-config@0.1.5(e8971e829804deddabd52764bb4ffcf2))(@vitejs/plugin-react@6.1.1(@voidzero-dev/vite-plus-core@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(esbuild@0.28.2)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))(oxc-transform-react@0.149.0))(happy-dom@20.14.3)(oxc-transform-react@0.149.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite-plus@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))
       '@stealthscale/vite-config-typescript':
         specifier: 'catalog:'
         version: 0.1.1
@@ -619,11 +619,23 @@ importers:
         specifier: 'catalog:'
         version: 19.3.0
 
+  packages/vite-config-specimen:
+    devDependencies:
+      '@stealthscale/vite-config':
+        specifier: 'catalog:'
+        version: 0.1.5(e8971e829804deddabd52764bb4ffcf2)
+      '@stealthscale/vite-config-core':
+        specifier: 'catalog:'
+        version: 0.2.0(vite-plus@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))
+      '@stealthscale/vite-plugin-specimen':
+        specifier: workspace:^
+        version: link:../vite-plugin-specimen
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.4
+
   packages/vite-plugin-specimen:
     devDependencies:
-      '@stealthscale/foundation-specimen':
-        specifier: workspace:^
-        version: link:../../foundations/specimen
       '@stealthscale/testing':
         specifier: 'catalog:'
         version: 0.1.0
@@ -649,29 +661,7 @@ importers:
         specifier: 'catalog:'
         version: 19.3.0
 
-  themes/ember:
-    dependencies:
-      '@fontsource-variable/fira-code':
-        specifier: 'catalog:'
-        version: 5.3.0
-      '@fontsource-variable/jost':
-        specifier: 'catalog:'
-        version: 5.3.0
-    devDependencies:
-      '@chakra-ui/react':
-        specifier: 'catalog:'
-        version: 3.37.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@emotion/react':
-        specifier: 'catalog:'
-        version: 11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0)
-      '@stealthscale/theme':
-        specifier: workspace:^
-        version: link:../base
-      react:
-        specifier: 'catalog:'
-        version: 19.3.0
-
-  themes/harbor:
+  themes/fathom:
     dependencies:
       '@fontsource-variable/space-grotesk':
         specifier: 'catalog:'
@@ -693,12 +683,34 @@ importers:
         specifier: 'catalog:'
         version: 19.3.0
 
-  themes/lumen:
+  themes/folio:
     dependencies:
       '@fontsource-variable/literata':
         specifier: 'catalog:'
         version: 5.3.0
       '@fontsource-variable/source-code-pro':
+        specifier: 'catalog:'
+        version: 5.3.0
+    devDependencies:
+      '@chakra-ui/react':
+        specifier: 'catalog:'
+        version: 3.37.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@emotion/react':
+        specifier: 'catalog:'
+        version: 11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0)
+      '@stealthscale/theme':
+        specifier: workspace:^
+        version: link:../base
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+
+  themes/forge:
+    dependencies:
+      '@fontsource-variable/fira-code':
+        specifier: 'catalog:'
+        version: 5.3.0
+      '@fontsource-variable/jost':
         specifier: 'catalog:'
         version: 5.3.0
     devDependencies:
@@ -1696,12 +1708,13 @@ packages:
     peerDependencies:
       vite-plus: 0.3.1
 
-  '@stealthscale/vite-config-react@0.3.0':
-    resolution: {integrity: sha512-mSnQbw48igcRK8H8PoWsJlQEk/Zzp0ljLpZAXv+wyVsNx4oauVQLLXZtw62rF4Q58dwiVPPDhiG9IkeuvwaCmw==}
+  '@stealthscale/vite-config-react@0.4.0':
+    resolution: {integrity: sha512-r8HYodfqXcnvotZAgcv+koc7UKQ1nViGgzrca5XdcXwBosyfNeEkfhnacOgRb1RY/ne2h3BdECXblm1sByx1SQ==}
     engines: {node: '>=24.0.0'}
     peerDependencies:
-      '@stealthscale/vite-config': ^0.1.3
+      '@stealthscale/vite-config': ^0.1.5
       '@vitejs/plugin-react': ^6.1.1
+      happy-dom: ^20.14.3
       oxc-transform-react: ^0.149.0
       react: ^19.3.0
       react-dom: ^19.3.0
@@ -1711,17 +1724,20 @@ packages:
     resolution: {integrity: sha512-UXXl2YeWQe6jwAe2YHDK3m0C8vTPWLyKcQiOrA9pYDKRrRQVwmTNfObGaEutk4AWZ34OQWc2tKs6boovFIvMng==}
     engines: {node: '>=24.0.0'}
 
-  '@stealthscale/vite-config@0.1.4':
-    resolution: {integrity: sha512-81Fq7EzpnxDzyZGF9H15B62O+9JptIZPLynJPs3TR2VxDiX4VWoUJYxoMPMJ4blFimg8RhOJsuK/FQnGquxcIw==}
+  '@stealthscale/vite-config@0.1.5':
+    resolution: {integrity: sha512-S72EZneZKr2GMn75P2ZTTEOL75A2MiYUIryz9Tv1TG4IEBjCs0oBBjmbfHFmVsk60PIOavab06elHgGQBSqSkA==}
     engines: {node: '>=24.0.0'}
     peerDependencies:
+      '@arethetypeswrong/core': ^0.18.5
       '@module-federation/vite': 1.21.5
       '@stealthscale/vite-config-core': ^0.2.0
       '@stealthscale/vite-plugin-sbom': ^0.2.0
+      '@vitest/coverage-v8': 4.1.11
       eslint-plugin-jsdoc: ^64.3.4
       eslint-plugin-perfectionist: ^5.11.0
       eslint-plugin-tsdoc: ^0.5.2
       happy-dom: ^20.14.3
+      publint: ^0.3.24
       vite-plus: 0.3.1
     peerDependenciesMeta:
       '@module-federation/vite':
@@ -4714,10 +4730,11 @@ snapshots:
     dependencies:
       vite-plus: 0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1)
 
-  '@stealthscale/vite-config-react@0.3.0(@stealthscale/vite-config@0.1.4(8efb7c07e51fa7e630fd27df3527c08f))(@vitejs/plugin-react@6.1.1(@voidzero-dev/vite-plus-core@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(esbuild@0.28.2)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))(oxc-transform-react@0.149.0))(oxc-transform-react@0.149.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite-plus@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))':
+  '@stealthscale/vite-config-react@0.4.0(@stealthscale/vite-config@0.1.5(e8971e829804deddabd52764bb4ffcf2))(@vitejs/plugin-react@6.1.1(@voidzero-dev/vite-plus-core@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(esbuild@0.28.2)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))(oxc-transform-react@0.149.0))(happy-dom@20.14.3)(oxc-transform-react@0.149.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(vite-plus@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))':
     dependencies:
-      '@stealthscale/vite-config': 0.1.4(8efb7c07e51fa7e630fd27df3527c08f)
+      '@stealthscale/vite-config': 0.1.5(e8971e829804deddabd52764bb4ffcf2)
       '@vitejs/plugin-react': 6.1.1(@voidzero-dev/vite-plus-core@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(esbuild@0.28.2)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))(oxc-transform-react@0.149.0)
+      happy-dom: 20.14.3
       oxc-transform-react: 0.149.0
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
@@ -4725,13 +4742,16 @@ snapshots:
 
   '@stealthscale/vite-config-typescript@0.1.1': {}
 
-  '@stealthscale/vite-config@0.1.4(8efb7c07e51fa7e630fd27df3527c08f)':
+  '@stealthscale/vite-config@0.1.5(e8971e829804deddabd52764bb4ffcf2)':
     dependencies:
+      '@arethetypeswrong/core': 0.18.5
       '@stealthscale/vite-config-core': 0.2.0(vite-plus@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))
       '@stealthscale/vite-plugin-sbom': 0.2.0(@stealthscale/vite-plugin-base@0.1.1(@voidzero-dev/vite-plus-core@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(esbuild@0.28.2)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1)))(@voidzero-dev/vite-plus-core@0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(esbuild@0.28.2)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1))(ajv@8.18.0)
+      '@vitest/coverage-v8': 4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)
       eslint-plugin-jsdoc: 64.3.9(eslint@10.10.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@7.0.2)
       eslint-plugin-perfectionist: 5.11.0(eslint@10.10.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@7.0.2)
       eslint-plugin-tsdoc: 0.5.2(eslint@10.10.0(supports-color@7.2.0))(supports-color@7.2.0)(typescript@7.0.2)
+      publint: 0.3.24
       vite-plus: 0.3.1(@arethetypeswrong/core@0.18.5)(@types/node@24.13.4)(@vitest/coverage-v8@4.1.11)(esbuild@0.28.2)(happy-dom@20.14.3)(publint@0.3.24)(typescript@7.0.2)(yaml@2.9.1)
     optionalDependencies:
       happy-dom: 20.14.3
