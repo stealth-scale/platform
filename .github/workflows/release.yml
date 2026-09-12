@@ -1,0 +1,58 @@
+# The release, on every push to main. `ci` runs first, on the same commit, so nothing reaches
+# the registry that was not proved on the tree it was cut from.
+#
+# Changesets then turns the pending changeset files into one version pull request; while that
+# pull request is open, every push updates it. When it merges, `changeset publish` publishes
+# every package whose version is not on the registry yet, with provenance from the job's
+# identity token. No long-lived token anywhere.
+#
+# The version pull request is written through the GitHub API with the job's own token, so no
+# workflow runs on it: this one runs again when it merges, proves the tree, and publishes.
+#
+# What the workspace cannot set up for itself: npm's trusted publishing has to be configured on
+# npmjs.com for each package, naming this repository and this workflow file, and the repository
+# has to be public, which provenance requires.
+#
+# There is no packing step before the install. `prepare` runs on install and generates the theme
+# typings, which is everything this workspace has to build before it can read itself.
+name: release
+
+on:
+  push:
+    branches: [main]
+
+concurrency: release
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    env:
+      NPM_CONFIG_PROVENANCE: "true"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: npm install --global npm@^11.5
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          version-script: pnpm exec changeset version
+          publish-script: pnpm exec changeset publish
+          commit-message: "chore: bump every package and write the changelogs"
+          pr-title: "chore: release"

@@ -5,12 +5,14 @@
   "description": "The stealth platform, built, checked, tested and released under the house configuration.",
   "type": "module",
   "scripts": {
-    "dev": "vp run website#dev",
+    "dev": "vp run docs#dev",
     "ready": "vp run ci",
     "prepare": "vp config && vp run theme#typegen"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
     "@stealthscale/vite-config": "catalog:",
     "@stealthscale/vite-config-core": "catalog:",
     "@stealthscale/vite-config-react": "catalog:",

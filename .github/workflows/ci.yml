@@ -1,0 +1,36 @@
+# What `pnpm run ready` runs, on every pull request: the same command a developer runs, and
+# nothing this file adds on top of it. The catalogue's own tests open a browser and install one
+# in a step of their own, because nothing here does yet.
+#
+# A push to main does not run this directly. `release` owns that branch, calls this file first,
+# and publishes only what it proved.
+name: ci
+
+on:
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run ready

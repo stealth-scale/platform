@@ -1,4 +1,4 @@
-import { lint, test } from "@stealthscale/vite-config";
+import { fmt, lint, test } from "@stealthscale/vite-config";
 import { preset as react } from "@stealthscale/vite-config-react";
 import { defineConfig } from "@stealthscale/vite-config/preset/node";
 import { workspace } from "@stealthscale/vite-config/preset/workspace";
@@ -22,6 +22,14 @@ export default defineConfig(import.meta.dirname, {
     workspace(),
     react.workspace(),
     specimens(),
+
+    fmt.skip({
+      because:
+        "changesets writes it from the changeset files and rewrites it on every release, so a " +
+        "wrapped changelog is undone by the next `changeset version` and the diff it leaves is " +
+        "nobody's to read. The prose is already wrapped where it is written, in the changeset",
+      files: ["**/CHANGELOG.md"],
+    }),
 
     // Branches alone, because branches alone are the ones the counter gets wrong here. It reads a
     // component back from the code the JSX transform emitted, and reports conditions the file does
