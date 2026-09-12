@@ -24,12 +24,12 @@ import { defineConfig } from "@stealthscale/vite-config-react/preset/web";
 export default defineConfig(import.meta.dirname);
 ```
 
-| Tier                                          | For                                 |
-| --------------------------------------------- | ----------------------------------- |
-| `@stealthscale/vite-config/preset/base`       | Publishes, says nothing about where it runs |
-| `@stealthscale/vite-config/preset/node`       | Publishes and runs on the console   |
-| `@stealthscale/vite-config-react/preset/web`  | A component library that publishes  |
-| `@stealthscale/vite-config-react/preset/app`  | An application that is deployed     |
+| Tier                                         | For                                         |
+| -------------------------------------------- | ------------------------------------------- |
+| `@stealthscale/vite-config/preset/base`      | Publishes, says nothing about where it runs |
+| `@stealthscale/vite-config/preset/node`      | Publishes and runs on the console           |
+| `@stealthscale/vite-config-react/preset/web` | A component library that publishes          |
+| `@stealthscale/vite-config-react/preset/app` | An application that is deployed             |
 
 `import.meta.dirname` is required. Under `vp test` the working directory is the workspace root, and
 a config is bundled to a temporary file outside its own package before it runs, so nothing else can
