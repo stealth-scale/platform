@@ -22,3 +22,4 @@ export { Section, type SectionProps } from "#section.tsx";
 export { type Scene, scene, type Specimen, specimen } from "#specimen.ts";
 export { Text, type TextProps } from "#text.tsx";
 export { Trigger, type TriggerProps } from "#trigger.tsx";
+export { Worn, type WornProps } from "#worn.tsx";
