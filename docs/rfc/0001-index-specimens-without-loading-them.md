@@ -2,7 +2,7 @@
 rfc: 0001
 title: Index specimens without loading them
 author: Roy Klopper
-status: Draft
+status: Accepted
 created: 2026-09-12
 updated: 2026-09-12
 discussion: none
@@ -90,14 +90,18 @@ hands over — which is the whole reason the index can be cheap.
 Vite re-exports the parser rolldown already uses, so the plugin adds no parser of its own:
 
 ```ts
-import { parseSync, Visitor } from "vite";
+import { type ESTree, parseSync } from "vite";
 
-const parsed = parseSync(path, text, { lang: "tsx" });
+const parsed = parseSync(path, text);
 ```
 
-`parseSync` answers a `ParseResult` carrying `program`, `module`, `comments` and `errors`, and
-`Visitor` walks the program. Both come from `rolldown/utils` through Vite's own entry point, which
-means the AST and the parser that produced it are the same build by construction.
+`parseSync` answers a `ParseResult` carrying `program`, `module`, `comments` and `errors`, with the
+language taken from the file's extension. The program is typed as `ESTree`, the `@oxc-project/types`
+build rolldown itself was compiled against, and the reader walks it under those types: a default
+export, a call, an object literal, its properties. All three come from `rolldown/utils` through
+Vite's own entry point, which means the AST, its types and the parser that produced it are the same
+build by construction, and a Vite upgrade that reshapes a node fails to compile here rather than
+reading every page as empty.
 
 `parseAst` and `parseAstAsync` are exported alongside them and carry
 `@deprecated - use parseSync instead`, so this uses the current entry rather than the compatibility
@@ -154,17 +158,50 @@ export interface Entry {
 }
 
 /**
- * Reads specimen files into the entries an index lists.
+ * One file that matched a pattern and could not be read as a page.
+ */
+export interface Refused {
+  /**
+   * Where the file is, absolute.
+   */
+  path: string;
+
+  /**
+   * What was wrong with it, as a catalogue shows it.
+   */
+  wrong: string;
+}
+
+/**
+ * The page a file states, or why it states none.
+ */
+export type Read = Entry | Refused;
+
+/**
+ * Answers whether the reader refused a file.
  *
- * Answers the entries rather than writing them, so one reading serves the virtual module this
- * proposal emits and whatever destination another proposal adds.
+ * @param held - The reader's answer for one file.
+ * @returns Whether it is a refusal rather than a page.
+ */
+export function isRefused(held: Read): held is Refused;
+
+/**
+ * Reads specimen files into what an index lists.
+ *
+ * Answers one thing per file rather than stopping at the first it cannot read, so a build can
+ * name every wrong file at once and a dev server can list the page and say what is wrong with it.
+ * Two files stating one identifier are the same kind of wrong: the second is refused, naming the
+ * first.
  *
  * @param files - Every file the patterns matched.
- * @returns One entry per file, in the order given.
- * @throws Error Where a file does not meet the three conditions, naming the file and the condition.
+ * @returns One page or refusal per file, in the order given.
  */
-export function read(files: readonly Source[]): readonly Entry[];
+export function read(files: readonly Source[]): readonly Read[];
 ```
+
+The reader never throws, because which refusals stop a build and which are listed is the plugin's
+decision, made from what the bundler is doing, and a reader that threw would make it for every
+caller.
 
 ### The virtual module
 
@@ -195,7 +232,17 @@ export interface Indexed extends Entry {
    * Vite's `?raw` suffix answers a module whose default export is the source, and it splits like
    * any other dynamic import, so a page costs its text only where somebody asks to read it.
    */
-  source: () => Promise<{ default: string }>;
+  source: () => Promise<Raw>;
+}
+
+/**
+ * The module Vite answers for a file imported with `?raw`.
+ */
+export interface Raw {
+  /**
+   * The file's text.
+   */
+  default: string;
 }
 
 /**
@@ -206,6 +253,11 @@ export const pages: readonly Indexed[];
 
 `load` is absent from what `read` answers, a loader being generated code rather than something read
 out of a file. The plugin adds one per entry when it writes the module.
+
+The package exports `Indexed` and `Raw`, and declares the module itself under
+`@stealthscale/vite-plugin-specimen/client`. A catalogue names that once, in a triple-slash
+directive from a file it already compiles, and `import { pages } from "virtual:specimen-index"`
+type-checks from then on.
 
 `pages` is the concatenation of the index sources the plugin was given, which is one today. An index
 arriving from somewhere other than a glob would add a source rather than change how entries are
@@ -222,7 +274,7 @@ component chunk.
 ```mermaid
 flowchart LR
     P[patterns] -->|paths and text| R[read]
-    R -->|Entry per file| E[emit]
+    R -->|page or refusal per file| E[emit]
     E -->|module source| V["virtual:specimen-index"]
     V -->|one dynamic import per entry| B[bundler]
     B -->|index chunk| N[navigation]
@@ -265,9 +317,12 @@ sequenceDiagram
     end
 ```
 
-Re-reading one file is what makes this cheap in the loop where it runs most. A change to a scene
-leaves the index alone and redraws the open page; a change to `id`, `group`, `title` or `about`
-costs a redraw of the rail as well.
+Re-reading one file is what makes this cheap in the loop where it runs most. Vite's `hotUpdate` hook
+hands the plugin the file and its text; the plugin reads that file alone, writes its listing and
+compares it with the listing the index was written from. A change to a scene leaves the listing as
+it was, so the index is left alone and the open page redraws; a change to `id`, `group`, `title` or
+`about` changes the listing, so the index is invalidated and the rail redraws as well. A file
+appearing or disappearing invalidates the index without being read, there being nothing to compare.
 
 ### A file the reader refuses
 
@@ -278,15 +333,17 @@ loading it, which is the thing this proposal exists to avoid.
 What reports the error depends on what the bundler is doing, which `configResolved` tells the
 plugin:
 
-- Building: the plugin throws, naming the file and the condition. The build stops.
-- Serving: the plugin indexes the file under its filename and gives it a `load` that throws. The
-  rail lists it, opening it shows the error, and every other page works.
+- Building: the plugin throws, naming every such file and what is wrong with each. The build stops.
+- Serving: the plugin indexes the file under its filename, with the reason as its opening and a
+  `load` that rejects with the same. The rail lists it, opening it shows the error, and every other
+  page works. Fixing the file is a change like any other, and the index is invalidated the same way.
 
 Failing the whole index while serving would take the catalogue dark because one file is mid-edit,
 which is the wrong trade in the loop where files are mid-edit most often.
 
-Two files sharing an identifier is the same error, reported the same way. The failure it produces
-otherwise is silent: two pages at one address, and the second unreachable.
+Two files sharing an identifier is the same error, reported the same way in both modes: the second
+is refused, naming the first. The failure it produces otherwise is silent: two pages at one address,
+and the second unreachable.
 
 A pattern matching no file at all is an error in both modes. One unreadable file leaves a catalogue
 worth opening, so serving it degrades; a pattern matching nothing leaves no pages, which is a
@@ -356,7 +413,7 @@ part the bundler must leave unloaded.
 
 ## Drawbacks
 
-**A package to own.** `package.json`, `tsconfig.json`, `README.md` and four source files, of which
+**A package to own.** `package.json`, `tsconfig.json`, `client.d.ts` and four source files, of which
 two are specifications. Seven files, and a release whenever the three conditions change.
 
 **Metadata has to be literal, and a build fails when it is not.** A specimen computing its
@@ -370,19 +427,22 @@ again. The second copy is a few strings per page and nothing reads it.
 catalogue that opens ten pages still makes ten requests.
 
 **An AST walk to maintain.** The reader depends on the shape of an oxc program, and a Vite upgrade
-carrying a new rolldown can change it. A specification over fixture strings catches that, and
-somebody still has to fix it.
+carrying a new rolldown can change it. The walk is typed against the same build's `ESTree`, so the
+change fails to compile rather than passing quietly, and somebody still has to fix it.
 
 **A plugin is harder to look at than a file.** A generated index can be opened and read; a virtual
 module can be reached only through the build that emits it.
 
 ## Open questions
 
-Is a better error worth an import specifier? Tracing the callee back to its binding would let the
-plugin report that a default export is not a specimen at all. It costs an option naming the import
-to look for, and it refuses a file that re-exports its default from somewhere else.
+None.
 
 ## Unresolved and future work
+
+Tracing the callee back to its binding is not proposed here. It would let the plugin report that a
+default export is not a specimen at all, at the price of an option naming the import to look for,
+and it refuses a file that re-exports its default from somewhere else. The three conditions already
+refuse everything the index cannot use.
 
 Indexing specimens from installed packages is not proposed here, though a pattern reaching into
 `node_modules` is why `patterns` takes more than one. Nothing about the glob prevents it. What
