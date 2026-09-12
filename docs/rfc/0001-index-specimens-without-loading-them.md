@@ -143,7 +143,7 @@ export interface Entry {
   id: string;
 
   /**
-   * Where the file is, which is what the emitted loader imports.
+   * Where the file is, absolute, which is what the emitted loader imports.
    */
   path: string;
 
@@ -174,12 +174,28 @@ export function read(files: readonly Source[]): readonly Entry[];
  */
 export interface Indexed extends Entry {
   /**
+   * Where the file is, against the project root, with forward slashes on every platform.
+   *
+   * Narrowed from what the reader answers. An absolute path would put one machine's directory
+   * layout in the bundle, and two machines building the same tree would emit different output.
+   */
+  path: string;
+
+  /**
    * Loads the module holding the scenes.
    *
    * A dynamic import, so the bundler splits the file into a chunk of its own and keeps everything
    * it imports out of the chunk holding this index.
    */
   load: () => Promise<unknown>;
+
+  /**
+   * Loads the file's own text, for a catalogue showing what drew a page.
+   *
+   * Vite's `?raw` suffix answers a module whose default export is the source, and it splits like
+   * any other dynamic import, so a page costs its text only where somebody asks to read it.
+   */
+  source: () => Promise<{ default: string }>;
 }
 
 /**
@@ -375,6 +391,14 @@ and build from `src/index.ts`, which a specimen is not reachable from, so specim
 bundled nor published. Metadata parses as well out of compiled output as out of source, the fields
 being string literals either way, so putting specimens in a tarball is a packaging question rather
 than a parsing one.
+
+Showing one scene's source rather than the whole file is not proposed here. A page lists its scenes
+as identifiers — `scenes: [variants, sizes, palettes]` — so the span of an element is the width of
+the word `variants` rather than of the scene, and slicing a scene out means resolving that
+identifier to its declaration in the same file. That resolution fails on a scene written inline,
+imported from a sibling, or built by a helper, none of which the format forbids. A catalogue wanting
+this can show the whole file with the declaration highlighted, the identifier's span being enough to
+find it.
 
 Extracting the reader into a package of its own is not proposed here. One caller is not enough to
 design an interface against.
