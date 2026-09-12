@@ -24,11 +24,17 @@ const system = createSystem(defaultConfig);
 /**
  * Renders a two-item menubar and answers the element it was rendered into, so a test may draw two
  * menubars and tell them apart.
+ *
+ * Opened and closed without the delays a reader gets, which a test has no use for and cannot
+ * outlive. A menubar opens on hover and waits before it commits, so a press schedules the change
+ * two hundred milliseconds out; a specification asserts and ends in thirty, and the timer then
+ * fires against a menubar that has been taken off the page. Both are stated before the caller's
+ * props, so a test asking for its own still gets them.
  */
 function menubar(props: Omit<NavigationMenuRootProps, "children"> = {}): HTMLElement {
   const { container } = render(
     <ChakraProvider value={system}>
-      <NavigationMenuRoot {...props}>
+      <NavigationMenuRoot closeDelay={0} openDelay={0} {...props}>
         <NavigationMenuList>
           <NavigationMenuItem value="products">
             <NavigationMenuTrigger>Products</NavigationMenuTrigger>
@@ -70,6 +76,12 @@ function menubar(props: Omit<NavigationMenuRootProps, "children"> = {}): HTMLEle
  * keeps one specification's leftovers out of the next one. Fired through the renderer rather than
  * by calling `click` on the element, so React flushes what the close sets before the tree comes
  * down. A bare `click` leaves that work queued, and it is then run against a page it no longer has.
+ *
+ * This closes the menu and the zero delays keep the close immediate, and it takes both: with the
+ * delays alone the last test still ends with one item open and its timer outstanding, and with the
+ * close alone the close is itself scheduled three hundred milliseconds out. Counted rather than
+ * guessed at, by holding every timer this file opens and reading back how many were still standing
+ * when it finished: two before, one with either, none with both.
  */
 afterEach(() => {
   const open = document.querySelector<HTMLElement>("[data-part=trigger][data-state=open]");
