@@ -1,0 +1,60 @@
+{
+  "name": "@stealthscale/theme-forge",
+  "version": "0.0.0",
+  "description": "A warm, quick theme for an operations console: cream surfaces, an orange brand and a faster hand.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stealth-scale/ui.git",
+    "directory": "themes/forge"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "./src/fonts.ts",
+    "./dist/fonts.mjs",
+    "*.css"
+  ],
+  "imports": {
+    "#*": "./src/*"
+  },
+  "exports": {
+    ".": {
+      "stealth-source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./fonts": {
+      "stealth-source": "./src/fonts.ts",
+      "default": "./dist/fonts.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.js",
+      "./fonts": "./dist/fonts.js",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts src/fonts.ts"
+  },
+  "dependencies": {
+    "@fontsource-variable/fira-code": "catalog:",
+    "@fontsource-variable/jost": "catalog:"
+  },
+  "devDependencies": {
+    "@chakra-ui/react": "catalog:",
+    "@emotion/react": "catalog:",
+    "@stealthscale/theme": "workspace:^",
+    "react": "catalog:"
+  },
+  "peerDependencies": {
+    "@chakra-ui/react": "catalog:",
+    "@emotion/react": "catalog:",
+    "react": "catalog:"
+  }
+}

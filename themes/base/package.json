@@ -1,0 +1,53 @@
+{
+  "name": "@stealthscale/theme",
+  "version": "0.0.0",
+  "description": "The design system's base theme: a blue primary on cool greys, and the vocabulary every other theme is written in.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stealth-scale/ui.git",
+    "directory": "themes/base"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#*": "./src/*"
+  },
+  "exports": {
+    ".": {
+      "stealth-source": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "stealth-source": "./src/testing.ts",
+      "default": "./dist/testing.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.js",
+      "./testing": "./dist/testing.js",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "chakra typegen src/config.ts && vp pack src/index.ts src/testing.ts",
+    "typegen": "chakra typegen src/config.ts"
+  },
+  "devDependencies": {
+    "@chakra-ui/cli": "catalog:",
+    "@chakra-ui/react": "catalog:",
+    "@emotion/react": "catalog:",
+    "react": "catalog:"
+  },
+  "peerDependencies": {
+    "@chakra-ui/react": "catalog:",
+    "@emotion/react": "catalog:",
+    "react": "catalog:"
+  }
+}
