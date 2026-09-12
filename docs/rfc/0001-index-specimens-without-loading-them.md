@@ -75,9 +75,12 @@ literally. Three conditions, and a file matching a pattern has to meet all of th
 - That object holds `id` as a string literal.
 
 `group`, `title` and `about` are read where each is a string literal, and read as empty otherwise.
-Nothing else about the file is read, and neither the name of the function being called nor where it
-was imported from is checked — a plugin that insisted on those would be asserting a fact it cannot
-see at the moment it reads the file.
+
+Neither the name of the function being called nor where it was imported from is checked. The parser
+does report that — `ParseResult.module` carries `staticImports`, so tracing the callee back to its
+binding is available — but the three conditions already refuse everything the index cannot use, and
+a binding check buys a better error message at the price of an import specifier the plugin would
+then have to be told.
 
 Scenes are not read at all. A scene holds a component, and a component is not something source text
 hands over — which is the whole reason the index can be cheap.
@@ -269,6 +272,10 @@ which is the wrong trade in the loop where files are mid-edit most often.
 Two files sharing an identifier is the same error, reported the same way. The failure it produces
 otherwise is silent: two pages at one address, and the second unreachable.
 
+A pattern matching no file at all is an error in both modes. One unreadable file leaves a catalogue
+worth opening, so serving it degrades; a pattern matching nothing leaves no pages, which is a
+mistyped pattern rather than a catalogue.
+
 ## Alternatives considered
 
 ### Use Storybook
@@ -355,14 +362,9 @@ module can be reached only through the build that emits it.
 
 ## Open questions
 
-Should the three conditions be checked against the imported binding, so that a call to something
-other than a specimen factory is refused rather than read?
-
-Does `virtual:specimen-index` want a second export listing the groups, or does every rail that needs
-them derive them cheaply enough?
-
-What does the plugin do with a pattern that matches nothing — a catalogue with no pages, or an error
-saying the pattern is wrong?
+Is a better error worth an import specifier? Tracing the callee back to its binding would let the
+plugin report that a default export is not a specimen at all. It costs an option naming the import
+to look for, and it refuses a file that re-exports its default from somewhere else.
 
 ## Unresolved and future work
 
