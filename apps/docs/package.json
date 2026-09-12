@@ -1,0 +1,30 @@
+{
+  "name": "@stealthscale/docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The catalogue: every specimen in the workspace, listed from its source and drawn on demand.",
+  "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
+  "scripts": {
+    "build": "vp build",
+    "dev": "vp dev",
+    "preview": "vp preview"
+  },
+  "dependencies": {
+    "@chakra-ui/react": "catalog:",
+    "@emotion/react": "catalog:",
+    "@stealthscale/foundation-specimen": "workspace:^",
+    "@stealthscale/theme": "workspace:^",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@stealthscale/vite-config-react": "catalog:",
+    "@stealthscale/vite-config-specimen": "workspace:^",
+    "@stealthscale/vite-plugin-specimen": "workspace:^",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:"
+  }
+}
