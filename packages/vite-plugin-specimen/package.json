@@ -1,0 +1,45 @@
+{
+  "name": "@stealthscale/vite-plugin-specimen",
+  "version": "0.0.0",
+  "description": "Indexes specimen files from their source, so a catalogue lists every page without loading one.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stealth-scale/ui.git",
+    "directory": "packages/vite-plugin-specimen"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#*": "./src/*"
+  },
+  "exports": {
+    ".": {
+      "stealth-source": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack src/index.ts"
+  },
+  "devDependencies": {
+    "@stealthscale/foundation-specimen": "workspace:^",
+    "@stealthscale/testing": "catalog:",
+    "@types/node": "catalog:",
+    "vite": "catalog:"
+  },
+  "peerDependencies": {
+    "vite": "catalog:peer"
+  }
+}
