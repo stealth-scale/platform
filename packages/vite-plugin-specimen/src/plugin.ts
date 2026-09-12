@@ -8,10 +8,18 @@
  */
 
 import { globSync, readFileSync } from "node:fs";
-import { relative } from "node:path";
-import { type Plugin, type ResolvedConfig } from "vite";
+import { relative, resolve } from "node:path";
+import {
+  createFilter,
+  type EnvironmentModuleGraph,
+  type EnvironmentModuleNode,
+  type HotUpdateOptions,
+  normalizePath,
+  type Plugin,
+  type ResolvedConfig,
+} from "vite";
 
-import { type Entry, read, type Source } from "#read.ts";
+import { type Entry, isRefused, type Read, read, type Source } from "#read.ts";
 
 /**
  * What a catalogue imports to reach the index.
@@ -37,6 +45,49 @@ export interface Options {
 }
 
 /**
+ * The module Vite answers for a file imported with `?raw`.
+ */
+export interface Raw {
+  /**
+   * The file's text.
+   */
+  default: string;
+}
+
+/**
+ * One page, as the emitted module lists it, with the means to open it.
+ *
+ * What `virtual:specimen-index` exports as `pages`. A file the reader refused is listed too, under
+ * its filename, with the reason as its opening and a loader that rejects with the same; a rail
+ * still shows the page, and opening it says what is wrong.
+ */
+export interface Indexed extends Entry {
+  /**
+   * Loads the module holding the scenes.
+   *
+   * A dynamic import, so the bundler splits the file into a chunk of its own and keeps everything
+   * it imports out of the chunk holding this index.
+   */
+  load: () => Promise<unknown>;
+
+  /**
+   * Where the file is, against the project root, with forward slashes on every platform.
+   *
+   * Narrowed from what the reader answers. An absolute path would put one machine's directory
+   * layout in the bundle, and two machines building the same tree would emit different output.
+   */
+  path: string;
+
+  /**
+   * Loads the file's own text, for a catalogue showing what drew a page.
+   *
+   * Vite's `?raw` suffix answers a module whose default export is the source, and it splits like
+   * any other dynamic import, so a page costs its text only where somebody asks to read it.
+   */
+  source: () => Promise<Raw>;
+}
+
+/**
  * What this plugin reads off a resolved configuration.
  *
  * Narrowed from Vite's own, so a specification can state one in two fields rather than building a
@@ -45,10 +96,28 @@ export interface Options {
 type Resolved = Pick<ResolvedConfig, "command" | "root">;
 
 /**
+ * What the update hook reaches for on the environment it is called in.
+ *
+ * Narrowed to the one lookup it makes, so a specification can hand it a graph of one entry.
+ */
+interface Watching {
+  /**
+   * The environment a file changed in.
+   */
+  environment: {
+    /**
+     * Its module graph, which knows whether the index was ever loaded.
+     */
+    moduleGraph: Pick<EnvironmentModuleGraph, "getModuleById">;
+  };
+}
+
+/**
  * Reads every file the patterns matched, in a stable order.
  *
  * Sorted rather than left as the filesystem answered, so two machines building the same tree emit
- * the same module and a diff of the output says something.
+ * the same module and a diff of the output says something. Paths are absolute and forward-slashed,
+ * which is how Vite names a file when it reports one changed.
  *
  * @param root - The directory patterns resolve against.
  * @param patterns - Where to look.
@@ -63,7 +132,7 @@ function found(root: string, patterns: readonly string[]): readonly Source[] {
   }
 
   return paths.map((path) => {
-    const at = `${root}/${path}`;
+    const at = normalizePath(resolve(root, path));
 
     return { path: at, text: readFileSync(at, "utf8") };
   });
@@ -71,10 +140,6 @@ function found(root: string, patterns: readonly string[]): readonly Source[] {
 
 /**
  * Says where a file is, as a catalogue should show it.
- *
- * Relative to the root, and with forward slashes whatever the platform separates with. An absolute
- * path would bake one machine's directory layout into the bundle, and two machines building the
- * same tree would answer different output.
  *
  * @param path - Where the file is, absolute.
  * @param root - The directory to say it against.
@@ -85,94 +150,62 @@ function shown(path: string, root: string): string {
 }
 
 /**
- * Writes one entry, with the loaders a catalogue opens it through.
+ * Writes one page as the module lists it, with the loaders a catalogue opens it through.
  *
  * The import stays absolute, being what the bundler resolves. Only what a catalogue reads is said
  * against the root.
  *
- * @param entry - The entry the reader answered.
+ * @param held - The reader's answer for the file.
  * @param root - The directory paths are shown against.
- * @returns The entry, as source.
+ * @returns The listing, as source.
  */
-function listed(entry: Entry, root: string): string {
-  const held = JSON.stringify(
-    {
-      about: entry.about,
-      group: entry.group,
-      id: entry.id,
-      path: shown(entry.path, root),
-      title: entry.title,
-    },
-    null,
-    2,
-  );
-  const body = held.slice(1, -1).trimEnd();
+function listing(held: Read, root: string): string {
+  const at = shown(held.path, root);
+  const fields = isRefused(held)
+    ? { about: held.wrong, group: "", id: at, path: at, title: at.slice(at.lastIndexOf("/") + 1) }
+    : { about: held.about, group: held.group, id: held.id, path: at, title: held.title };
+  const load = isRefused(held)
+    ? `Promise.reject(new Error(${JSON.stringify(held.wrong)}))`
+    : `import(${JSON.stringify(held.path)})`;
+  const body = JSON.stringify(fields, null, 2).slice(1, -1).trimEnd();
 
-  return `  {${body},\n    load: () => import(${JSON.stringify(entry.path)}),\n    source: () => import(${JSON.stringify(`${entry.path}?raw`)}),\n  }`;
+  return `  {${body},\n    load: () => ${load},\n    source: () => import(${JSON.stringify(`${held.path}?raw`)}),\n  }`;
 }
 
 /**
- * Writes an entry standing in for a file the reader refused.
+ * Reads the files and writes a listing for each, by path.
  *
- * Listed rather than left out, so a rail still shows the page and opening it says what is wrong
- * with it. Taking the whole catalogue down because one file is half-written is the wrong trade in
- * the loop where files are half-written most often.
- *
- * @param path - Where the file is, absolute.
- * @param wrong - The reason the reader refused it.
- * @param root - The directory paths are shown against.
- * @returns The entry, as source.
- */
-function refused(path: string, wrong: string, root: string): string {
-  const at = shown(path, root);
-  const name = at.slice(at.lastIndexOf("/") + 1);
-  const held = JSON.stringify({ about: wrong, group: "", id: at, path: at, title: name }, null, 2);
-  const body = held.slice(1, -1).trimEnd();
-
-  return `  {${body},\n    load: () => Promise.reject(new Error(${JSON.stringify(wrong)})),\n    source: () => import(${JSON.stringify(`${path}?raw`)}),\n  }`;
-}
-
-/**
- * Reads the files one at a time, so one refusal costs one page rather than the catalogue.
- *
- * @param files - Every file the patterns matched.
- * @param root - The directory paths are shown against.
- * @returns One listing per file, in the order given.
- */
-function serving(files: readonly Source[], root: string): readonly string[] {
-  return files.map((file) => {
-    try {
-      const [entry] = read([file]);
-
-      return entry === undefined ? refused(file.path, "read nothing", root) : listed(entry, root);
-    } catch (error) {
-      return refused(file.path, error instanceof Error ? error.message : String(error), root);
-    }
-  });
-}
-
-/**
- * Writes the index for a root, reading every file the patterns matched.
- *
- * Separate from the hook that calls it, and exported, so a specification drives the whole of this
- * without a bundler and without reaching through `ObjectHook` to find a function.
- *
- * A build stops on the first file it cannot read. A dev server lists that file with a loader that
- * throws instead, leaving every other page of the catalogue working.
+ * A build stops here, naming every file it cannot read. A dev server lists each such file with a
+ * loader that rejects instead, leaving every other page of the catalogue working: taking the whole
+ * catalogue down because one file is half-written is the wrong trade in the loop where files are
+ * half-written most often.
  *
  * @param resolved - The root and command the bundler settled on.
- * @param patterns - Where to look.
- * @returns The virtual module's source.
- * @throws Error Where the patterns matched nothing, or a build met a file it cannot read.
+ * @param files - The files to read.
+ * @returns Each file's listing, by its path, in the order given.
+ * @throws Error Where a build met a file it cannot read.
  */
-export function index(resolved: Resolved, patterns: readonly string[]): string {
-  const files = found(resolved.root, patterns);
-  const entries =
-    resolved.command === "serve"
-      ? serving(files, resolved.root)
-      : read(files).map((one) => listed(one, resolved.root));
+function listings(resolved: Resolved, files: readonly Source[]): ReadonlyMap<string, string> {
+  const held = read(files);
+  const wrong = held.filter((one) => isRefused(one));
 
-  return `export const pages = [\n${entries.join(",\n")},\n];\n`;
+  if (wrong.length > 0 && resolved.command !== "serve") {
+    const named = wrong.map((one) => `  ${one.path}: ${one.wrong}`).join("\n");
+
+    throw new Error(`specimen: could not index ${wrong.length} of ${held.length} files:\n${named}`);
+  }
+
+  return new Map(held.map((one) => [one.path, listing(one, resolved.root)]));
+}
+
+/**
+ * Writes the module a catalogue imports.
+ *
+ * @param lines - Every listing, in the order the pages are shown.
+ * @returns The module's source.
+ */
+function written(lines: Iterable<string>): string {
+  return `export const pages = [\n${[...lines].join(",\n")},\n];\n`;
 }
 
 /**
@@ -183,6 +216,7 @@ export function index(resolved: Resolved, patterns: readonly string[]): string {
  */
 export function specimenIndex(options: Options): Plugin {
   let resolved: Resolved = { command: "build", root: process.cwd() };
+  let last: ReadonlyMap<string, string> = new Map();
 
   return {
     /**
@@ -198,16 +232,48 @@ export function specimenIndex(options: Options): Plugin {
     },
 
     /**
-     * Writes the index, reading every file the patterns matched.
+     * Reloads the index when a specimen appears, disappears, or changes what it states.
      *
-     * A build stops on the first file it cannot read. A dev server lists that file with a loader
-     * that throws instead, leaving every other page of the catalogue working.
+     * A change to a scene alone is left to the page: the file is read again and its listing
+     * compared with the one the index holds, and where they agree the rail has nothing to redraw.
+     * A file the index refused is read the same way, so fixing it puts the page back without a
+     * restart.
+     *
+     * @param options - The file, what happened to it, and the modules the change reached.
+     * @returns The same modules with the index added, or nothing where the index is unaffected.
+     */
+    async hotUpdate(
+      this: Watching,
+      { file, modules, read: text, type }: HotUpdateOptions,
+    ): Promise<EnvironmentModuleNode[] | undefined> {
+      if (!createFilter(options.patterns, undefined, { resolve: resolved.root })(file)) {
+        return undefined;
+      }
+
+      if (type === "update") {
+        const fresh = listings(resolved, [{ path: file, text: await text() }]).get(file);
+
+        if (fresh === last.get(file)) return undefined;
+      }
+
+      const index = this.environment.moduleGraph.getModuleById(RESOLVED);
+
+      return index === undefined ? undefined : [...modules, index];
+    },
+
+    /**
+     * Writes the index, reading every file the patterns matched.
      *
      * @param id - Whichever module is being loaded.
      * @returns The module's source, or nothing where the module is not this one.
+     * @throws Error Where the patterns matched nothing, or a build met a file it cannot read.
      */
     load(id: string): string | undefined {
-      return id === RESOLVED ? index(resolved, options.patterns) : undefined;
+      if (id !== RESOLVED) return undefined;
+
+      last = listings(resolved, found(resolved.root, options.patterns));
+
+      return written(last.values());
     },
 
     name: "stealthscale:specimen-index",

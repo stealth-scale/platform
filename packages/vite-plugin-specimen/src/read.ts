@@ -5,9 +5,12 @@
  * holds and a parser can lift. Its scenes hold components, which it cannot, and which are the whole
  * reason an index is worth building: a rail listing 123 pages has no business loading 123
  * components to find out what to call them.
+ *
+ * The tree is walked under the parser's own types rather than read a field at a time. A Vite
+ * upgrade that reshapes a node then fails to compile here, instead of reading every page as empty.
  */
 
-import { parseSync } from "vite";
+import { type ESTree, parseSync } from "vite";
 
 /**
  * One specimen file, as the reader takes it.
@@ -55,73 +58,56 @@ export interface Entry {
 }
 
 /**
- * Holds an AST node, whose shape is read a field at a time rather than asserted whole.
+ * One file that matched a pattern and could not be read as a page.
  */
-type Node = Record<string, unknown>;
+export interface Refused {
+  /**
+   * Where the file is, absolute.
+   */
+  path: string;
 
-/**
- * Answers whether a value is a node this reader can look into.
- *
- * @param value - The value the parser put at that position.
- * @returns Whether it holds fields.
- */
-function walkable(value: unknown): value is Node {
-  return typeof value === "object" && value !== null;
+  /**
+   * What was wrong with it, as a catalogue shows it.
+   */
+  wrong: string;
 }
 
 /**
- * Reads one field of a node, where it holds a node there.
- *
- * @param node - The node to read.
- * @param field - Which field.
- * @returns The node at that field, or nothing where there is none.
+ * The page a file states, or why it states none.
  */
-function at(node: Node, field: string): Node | undefined {
-  const held: unknown = Reflect.get(node, field);
+export type Read = Entry | Refused;
 
-  return walkable(held) ? held : undefined;
+/**
+ * Answers whether the reader refused a file.
+ *
+ * @param held - The reader's answer for one file.
+ * @returns Whether it is a refusal rather than a page.
+ */
+export function isRefused(held: Read): held is Refused {
+  return "wrong" in held;
 }
 
 /**
- * Answers whether a node is of a kind.
+ * Finds the one object literal a call is made with.
  *
- * @param node - The node to test.
- * @param kind - The `type` it would carry.
- * @returns Whether it is that kind.
- */
-function isa(node: Node | undefined, kind: string): boolean {
-  return node !== undefined && Reflect.get(node, "type") === kind;
-}
-
-/**
- * Refuses a file, naming it and what was wrong with it.
+ * `satisfies` and `as` are looked through, being annotations on the object rather than a change
+ * to what it holds.
  *
- * @param path - Where the file is.
- * @param wrong - The reason it could not be accepted.
- * @throws Error Always. That is the point of it.
+ * @param call - The call the default export states.
+ * @returns The object literal, or nothing where the call takes anything else.
  */
-function refuse(path: string, wrong: string): never {
-  throw new Error(`${path}: ${wrong}`);
-}
+function argued(call: ESTree.CallExpression): ESTree.ObjectExpression | undefined {
+  let [only] = call.arguments;
 
-/**
- * Finds a program's default export, where it states one.
- *
- * @param program - The parsed program, whose shape is read rather than asserted.
- * @returns The declaration, or nothing where the file exports no default.
- */
-function exported(program: unknown): Node | undefined {
-  const body: unknown = walkable(program) ? Reflect.get(program, "body") : undefined;
-
-  for (const one of Array.isArray(body) ? body : []) {
-    if (walkable(one) && isa(one, "ExportDefaultDeclaration")) return one;
+  while (only?.type === "TSSatisfiesExpression" || only?.type === "TSAsExpression") {
+    only = only.expression;
   }
 
-  return undefined;
+  return only?.type === "ObjectExpression" && call.arguments.length === 1 ? only : undefined;
 }
 
 /**
- * Finds the object literal a file's default export is called with.
+ * Finds the object literal a file's default export is called with, or says why there is none.
  *
  * Three conditions, checked in the order a reader would notice them failing. Neither the name of
  * the function nor where it was imported from is checked: the conditions already refuse everything
@@ -129,33 +115,37 @@ function exported(program: unknown): Node | undefined {
  *
  * @param path - Where the file is.
  * @param text - Its source.
- * @returns The object literal, as a node.
- * @throws Error Where the file meets none of the three conditions.
+ * @returns The object literal, or the reason the file has none.
  */
-function declared(path: string, text: string): Node {
-  const parsed = parseSync(path, text, { lang: "tsx" });
+function declared(path: string, text: string): ESTree.ObjectExpression | string {
+  const parsed = parseSync(path, text);
 
-  if (parsed.errors.length > 0) refuse(path, `could not be parsed: ${parsed.errors[0]?.message}`);
+  if (parsed.errors.length > 0) return `could not be parsed: ${parsed.errors[0]?.message}`;
 
-  const found = exported(parsed.program);
+  const found = parsed.program.body.find((one) => one.type === "ExportDefaultDeclaration");
 
-  if (found === undefined) refuse(path, "states no default export");
+  if (found === undefined) return "states no default export";
 
-  const call = at(found, "declaration");
+  const call = found.declaration;
 
-  if (call === undefined || !isa(call, "CallExpression")) {
-    refuse(path, "states a default export that is not a call");
-  }
+  if (call.type !== "CallExpression") return "states a default export that is not a call";
 
-  const args: unknown = Reflect.get(call, "arguments");
-  const given: readonly unknown[] = Array.isArray(args) ? args : [];
-  const only = given.length === 1 ? given[0] : undefined;
+  return argued(call) ?? "calls with something other than one object";
+}
 
-  if (!walkable(only) || !isa(only, "ObjectExpression")) {
-    refuse(path, "calls with something other than one object");
-  }
+/**
+ * Reads the name a property is stated under, where the source holds it as text.
+ *
+ * @param property - One property of the object literal.
+ * @returns Its name, or nothing where the name is computed.
+ */
+function nameOf(property: ESTree.ObjectProperty): string | undefined {
+  const { computed, key } = property;
 
-  return only;
+  if (key.type === "Identifier" && !computed) return key.name;
+  if (key.type === "Literal" && typeof key.value === "string") return key.value;
+
+  return undefined;
 }
 
 /**
@@ -167,20 +157,17 @@ function declared(path: string, text: string): Node {
  * @param object - The object literal.
  * @returns Each string-literal field, by name.
  */
-function stated(object: Node): Record<string, string> {
-  const properties: unknown = Reflect.get(object, "properties");
+function stated(object: ESTree.ObjectExpression): Record<string, string> {
   const found: Record<string, string> = {};
 
-  for (const one of Array.isArray(properties) ? properties : []) {
-    if (!walkable(one) || !isa(one, "Property")) continue;
+  for (const one of object.properties) {
+    if (one.type !== "Property") continue;
 
-    const key = at(one, "key");
-    const value = at(one, "value");
-    const name: unknown = key === undefined ? undefined : Reflect.get(key, "name");
-    const held: unknown = value === undefined ? undefined : Reflect.get(value, "value");
+    const name = nameOf(one);
+    const { value } = one;
 
-    if (typeof name === "string" && isa(value, "Literal") && typeof held === "string") {
-      found[name] = held;
+    if (name !== undefined && value.type === "Literal" && typeof value.value === "string") {
+      found[name] = value.value;
     }
   }
 
@@ -200,39 +187,58 @@ function headingOf(name: string): string {
 }
 
 /**
- * Reads specimen files into the entries an index lists.
+ * Reads one file into the page it states, or the reason it states none.
  *
- * Answers the entries rather than writing them, so one reading serves the virtual module the plugin
- * emits and whatever destination another caller needs.
+ * @param file - The file, with its text.
+ * @returns The page, or the refusal.
+ */
+function entry(file: Source): Read {
+  const object = declared(file.path, file.text);
+
+  if (typeof object === "string") return { path: file.path, wrong: object };
+
+  const fields = stated(object);
+  const id = fields["id"];
+
+  if (id === undefined)
+    return { path: file.path, wrong: "states no id the source holds as a literal" };
+
+  return {
+    about: fields["about"] ?? "",
+    group: fields["group"] ?? "",
+    id,
+    path: file.path,
+    title: fields["title"] ?? headingOf(id.slice(id.lastIndexOf("/") + 1)),
+  };
+}
+
+/**
+ * Reads specimen files into what an index lists.
+ *
+ * Answers one thing per file rather than stopping at the first it cannot read, so a build can
+ * name every wrong file at once and a dev server can list the page and say what is wrong with it.
+ * Two files stating one identifier are the same kind of wrong: the second is refused, naming the
+ * first, because two pages at one address leave the second unreachable and nothing to say so.
  *
  * @param files - Every file the patterns matched.
- * @returns One entry per file, in the order given.
- * @throws Error Where a file states no readable page, or two files state one identifier.
+ * @returns One page or refusal per file, in the order given.
  */
-export function read(files: readonly Source[]): readonly Entry[] {
-  const entries: Entry[] = [];
+export function read(files: readonly Source[]): readonly Read[] {
   const seen = new Map<string, string>();
 
-  for (const file of files) {
-    const fields = stated(declared(file.path, file.text));
-    const id = fields["id"];
+  return files.map((file) => {
+    const held = entry(file);
 
-    if (id === undefined) refuse(file.path, "states no id the source holds as a literal");
+    if (isRefused(held)) return held;
 
-    const already = seen.get(id);
+    const already = seen.get(held.id);
 
-    if (already !== undefined)
-      refuse(file.path, `states the id ${id}, which ${already} states too`);
+    if (already !== undefined) {
+      return { path: file.path, wrong: `states the id ${held.id}, which ${already} states too` };
+    }
 
-    seen.set(id, file.path);
-    entries.push({
-      about: fields["about"] ?? "",
-      group: fields["group"] ?? "",
-      id,
-      path: file.path,
-      title: fields["title"] ?? headingOf(id.slice(id.lastIndexOf("/") + 1)),
-    });
-  }
+    seen.set(held.id, file.path);
 
-  return entries;
+    return held;
+  });
 }

@@ -5,14 +5,16 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stealth-scale/ui.git",
+    "url": "git+https://github.com/stealth-scale/platform.git",
     "directory": "packages/vite-plugin-specimen"
   },
   "files": [
+    "client.d.ts",
     "dist"
   ],
   "type": "module",
   "sideEffects": false,
+  "types": "./dist/index.d.mts",
   "imports": {
     "#*": "./src/*"
   },
@@ -21,12 +23,14 @@
       "stealth-source": "./src/index.ts",
       "default": "./dist/index.mjs"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": "./client.d.ts"
   },
   "publishConfig": {
     "exports": {
       ".": "./dist/index.mjs",
-      "./package.json": "./package.json"
+      "./package.json": "./package.json",
+      "./client": "./client.d.ts"
     },
     "access": "public"
   },
@@ -34,7 +38,6 @@
     "build": "vp pack src/index.ts"
   },
   "devDependencies": {
-    "@stealthscale/foundation-specimen": "workspace:^",
     "@stealthscale/testing": "catalog:",
     "@types/node": "catalog:",
     "vite": "catalog:"

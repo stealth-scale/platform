@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { read, type Source } from "#read.ts";
+import { type Entry, isRefused, read, type Refused, type Source } from "#read.ts";
 
 /**
  * Writes a specimen file around whatever a page declares.
@@ -16,12 +16,42 @@ function file(declared: string, path = "/src/badge/badge.specimen.tsx"): Source 
   };
 }
 
+/**
+ * Reads one file the case expects to be a page.
+ *
+ * @param held - The file.
+ * @returns The page it states.
+ * @throws Error Where the reader refused it.
+ */
+function page(held: Source): Entry {
+  const [one] = read([held]);
+
+  if (one === undefined || isRefused(one)) throw new Error("expected a page");
+
+  return one;
+}
+
+/**
+ * Reads one file the case expects to be refused.
+ *
+ * @param held - The file.
+ * @returns The refusal.
+ * @throws Error Where the reader answered a page.
+ */
+function refusal(held: Source): Refused {
+  const [one] = read([held]);
+
+  if (one === undefined || !isRefused(one)) throw new Error("expected a refusal");
+
+  return one;
+}
+
 test("reads every field a page states", () => {
-  const [held] = read([
+  const held = page(
     file(
       `{ about: "A word.", group: "Feedback", id: "feedback/badge", title: "Badge", scenes: [] }`,
     ),
-  ]);
+  );
 
   expect(held).toStrictEqual({
     about: "A word.",
@@ -33,28 +63,24 @@ test("reads every field a page states", () => {
 });
 
 test("reads a group and an opening as empty where a page states neither", () => {
-  const [held] = read([file(`{ id: "feedback/badge", scenes: [] }`)]);
+  const held = page(file(`{ id: "feedback/badge", scenes: [] }`));
 
-  expect(held?.group).toBe("");
-  expect(held?.about).toBe("");
+  expect(held.group).toBe("");
+  expect(held.about).toBe("");
 });
 
 test("calls a page after the last part of its identifier where it states no title", () => {
-  const [held] = read([file(`{ id: "feedback/badge", scenes: [] }`)]);
-
-  expect(held?.title).toBe("Badge");
+  expect(page(file(`{ id: "feedback/badge", scenes: [] }`)).title).toBe("Badge");
 });
 
 test("reads a hyphenated name as words, which is how a rail lists it", () => {
-  const [held] = read([file(`{ id: "overlays/hover-card", scenes: [] }`)]);
-
-  expect(held?.title).toBe("Hover card");
+  expect(page(file(`{ id: "overlays/hover-card", scenes: [] }`)).title).toBe("Hover card");
 });
 
 test("keeps the file's path, which is what the emitted loader imports", () => {
-  const [held] = read([file(`{ id: "a/b", scenes: [] }`, "/elsewhere/a.specimen.tsx")]);
+  const held = page(file(`{ id: "a/b", scenes: [] }`, "/elsewhere/a.specimen.tsx"));
 
-  expect(held?.path).toBe("/elsewhere/a.specimen.tsx");
+  expect(held.path).toBe("/elsewhere/a.specimen.tsx");
 });
 
 test("answers one entry per file, in the order given", () => {
@@ -63,50 +89,98 @@ test("answers one entry per file, in the order given", () => {
     file(`{ id: "a", scenes: [] }`, "/a.specimen.tsx"),
   ]);
 
-  expect(held.map((one) => one.id)).toStrictEqual(["b", "a"]);
+  expect(held.map((one) => (isRefused(one) ? one.wrong : one.id))).toStrictEqual(["b", "a"]);
 });
 
 test("reads no scenes, a component being the thing kept out of the index", () => {
-  const [held] = read([file(`{ id: "a", scenes: [{ draw: () => null, title: "One" }] }`)]);
+  const held = page(file(`{ id: "a", scenes: [{ draw: () => null, title: "One" }] }`));
 
   expect(held).not.toHaveProperty("scenes");
 });
 
-test("refuses a file whose default export is not a call, naming the file", () => {
-  expect(() => read([{ path: "/a.specimen.tsx", text: `export default { id: "a" };\n` }])).toThrow(
-    "/a.specimen.tsx",
-  );
+test("looks through `satisfies`, an annotation on the object rather than another value", () => {
+  const held = page(file(`{ id: "feedback/badge", scenes: [] } satisfies Specimen`));
+
+  expect(held.id).toBe("feedback/badge");
+});
+
+test("looks through `as const` the same way", () => {
+  expect(page(file(`{ id: "feedback/badge", scenes: [] } as const`)).id).toBe("feedback/badge");
+});
+
+test("reads a field stated under a quoted name, the quotes changing nothing", () => {
+  expect(page(file(`{ "id": "feedback/badge", scenes: [] }`)).id).toBe("feedback/badge");
+});
+
+test("walks past a spread, which states fields the source does not hold", () => {
+  expect(page(file(`{ ...shared, id: "feedback/badge", scenes: [] }`)).id).toBe("feedback/badge");
+});
+
+test("does not mistake a computed key for the name it is computed from", () => {
+  expect(refusal(file(`{ [id]: "feedback/badge", scenes: [] }`)).wrong).toMatch(/id/u);
+});
+
+test("parses a file by its own extension, so a `.ts` page is not read as JSX", () => {
+  const held = page({
+    path: "/a.specimen.ts",
+    text: `const same = <Held>(held: Held): Held => held;\nexport default specimen({ id: "a" });\n`,
+  });
+
+  expect(held.id).toBe("a");
+});
+
+test("refuses a file whose default export is not a call, naming what it found", () => {
+  const held = refusal({ path: "/a.specimen.tsx", text: `export default { id: "a" };\n` });
+
+  expect(held).toStrictEqual({
+    path: "/a.specimen.tsx",
+    wrong: "states a default export that is not a call",
+  });
 });
 
 test("refuses a file with no default export at all", () => {
-  expect(() => read([{ path: "/a.specimen.tsx", text: `export const a = 1;\n` }])).toThrow(
-    /default export/u,
-  );
+  const held = refusal({ path: "/a.specimen.tsx", text: `export const a = 1;\n` });
+
+  expect(held.wrong).toMatch(/default export/u);
 });
 
 test("refuses a call taking something other than one object", () => {
-  expect(() => read([file(`"feedback/badge"`)])).toThrow(/object/u);
+  expect(refusal(file(`"feedback/badge"`)).wrong).toMatch(/object/u);
+  expect(refusal(file(`{ id: "a", scenes: [] }, extra`)).wrong).toMatch(/object/u);
 });
 
 test("refuses a page stating no identifier", () => {
-  expect(() => read([file(`{ title: "Badge", scenes: [] }`)])).toThrow(/id/u);
+  expect(refusal(file(`{ title: "Badge", scenes: [] }`)).wrong).toMatch(/id/u);
 });
 
 test("refuses an identifier the source does not hold as a literal", () => {
-  expect(() => read([file(`{ id: idFor("badge"), scenes: [] }`)])).toThrow(/id/u);
+  expect(refusal(file(`{ id: idFor("badge"), scenes: [] }`)).wrong).toMatch(/id/u);
 });
 
-test("refuses two pages at one address, the second being unreachable otherwise", () => {
-  expect(() =>
-    read([
-      file(`{ id: "feedback/badge", scenes: [] }`, "/one.specimen.tsx"),
-      file(`{ id: "feedback/badge", scenes: [] }`, "/two.specimen.tsx"),
-    ]),
-  ).toThrow(/feedback\/badge/u);
+test("refuses the second of two pages at one address, naming the first", () => {
+  const [, second] = read([
+    file(`{ id: "feedback/badge", scenes: [] }`, "/one.specimen.tsx"),
+    file(`{ id: "feedback/badge", scenes: [] }`, "/two.specimen.tsx"),
+  ]);
+
+  expect(second).toStrictEqual({
+    path: "/two.specimen.tsx",
+    wrong: "states the id feedback/badge, which /one.specimen.tsx states too",
+  });
 });
 
 test("says what it could not parse where the source is not a program", () => {
-  expect(() => read([{ path: "/a.specimen.tsx", text: `export default specimen(` }])).toThrow(
-    "/a.specimen.tsx",
-  );
+  const held = refusal({ path: "/a.specimen.tsx", text: `export default specimen(` });
+
+  expect(held.wrong).toMatch(/parsed/u);
+});
+
+test("answers for every file, one refusal costing one page rather than the rest", () => {
+  const held = read([
+    file(`{ id: "a", scenes: [] }`, "/a.specimen.tsx"),
+    { path: "/b.specimen.tsx", text: "export default 1;\n" },
+    file(`{ id: "c", scenes: [] }`, "/c.specimen.tsx"),
+  ]);
+
+  expect(held.map((one) => isRefused(one))).toStrictEqual([false, true, false]);
 });
