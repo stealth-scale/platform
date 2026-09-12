@@ -24,9 +24,21 @@ test("names itself, so a repository indexing differently can take the layer back
 });
 
 test("owns what it hands over, so a name says where the layer came from", () => {
-  expect(layers(STATED).map((one) => one.name)).toStrictEqual(["specimen/specimen.indexed"]);
+  expect(layers(STATED).every((one) => one.name.startsWith("specimen/"))).toBe(true);
+});
+
+test("names the page and every pattern as crawl entries, so no page opened costs a reload", () => {
+  const entries = layers(STATED)
+    .filter((one) => one.kind === "contribution" && one.at === "optimizeDeps.entries")
+    .map((one) => (one as { item: string }).item);
+
+  expect(entries).toStrictEqual(["**/*.html", "src/**/*.specimen.tsx"]);
 });
 
 test("answers a list, so a catalogue composes these with whatever tier it picked", () => {
-  expect(layers(STATED)).toHaveLength(1);
+  expect(layers(STATED).map((one) => one.name)).toStrictEqual([
+    "specimen/specimen.indexed",
+    "specimen/deps.crawled(**/*.html)",
+    "specimen/deps.crawled(src/**/*.specimen.tsx)",
+  ]);
 });

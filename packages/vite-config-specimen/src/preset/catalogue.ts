@@ -1,10 +1,11 @@
 /**
  * What an application showing a catalogue is configured with.
  *
- * One layer, so there is no block directory to keep it in: the contribution that appends the plugin
- * and the composition a config extends sit together until there is a second of either.
+ * Two things, so there is no block directory to keep them in: the contribution that appends the
+ * plugin, and the composition a config extends, which adds what the plugin cannot say for itself.
  */
 
+import { deps } from "@stealthscale/vite-config";
 import { contribute, type Contribution, type Layer, owned } from "@stealthscale/vite-config-core";
 import { type Options, specimenIndex } from "@stealthscale/vite-plugin-specimen";
 
@@ -35,11 +36,26 @@ export function indexed(options: Options): Contribution {
  * Answered as a list rather than bound to a tier, because a catalogue is an ordinary application
  * first: it picks whichever tier its framework calls for and adds these.
  *
+ * The specimens are named as crawl entries beside the page. The dev server works out what to
+ * pre-bundle by crawling from the page, and a specimen is reached from the index by a dynamic
+ * import of a file outside the root, which no crawl follows; left alone, the first page opened
+ * finds what it depends on, re-bundles, and reloads the whole catalogue. Naming the entries turns
+ * the page's own inference off, which is why the page is named again beside them.
+ *
  * Owned, so a repository takes one back by a name that says where it came from.
  *
  * @param options - Where to look. `Options` documents every member.
  * @returns Each layer a catalogue needs, in the order they compose.
  */
 export function layers(options: Options): readonly Layer[] {
-  return owned("specimen", [indexed(options)]);
+  return owned("specimen", [
+    indexed(options),
+    ...deps.crawled({
+      because:
+        "a specimen is reached from the index by a dynamic import, which the dev server's crawl " +
+        "does not follow, so its dependencies would be found by the first page opened and cost a " +
+        "reload",
+      from: ["**/*.html", ...options.patterns],
+    }),
+  ]);
 }
